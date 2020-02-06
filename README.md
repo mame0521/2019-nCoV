@@ -91,11 +91,11 @@ class get_yq_info:
                             count += 1
                             #此处为写入行数累加，cities部分循环
             current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-            newworkbook.save('F:\人数采集3.0\实时采集v3.0-%s.xls' % (current_time))
+            newworkbook.save('F:\2019_nCoV_crawling_info\2019_nCoV_crawling_info-%s.xls' % (current_time))
             print('======数据爬取成功======')
 
     def make_dir(self):
-            file_path = 'F:/人数采集3.0/'
+            file_path = 'F:/2019_nCoV_crawling_info/'
             if not os.path.exists(file_path):
                     os.makedirs(file_path)
                     print('======数据文件夹不存在=======')
