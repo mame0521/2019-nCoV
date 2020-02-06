@@ -5,173 +5,119 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Feb  2 16:39:51 2020
-
-@author: GT72VR
 """
-
-import requests
-from bs4 import BeautifulSoup
-import datetime
+import requests,os
 import re
-from selenium import webdriver
+import xlwt
 import time
+import json
 
-def get_sh_data(url):
-    '''获得上海卫健委的数据'''
-    r = requests.get(url=url, headers=sh_headers)
-    sh_dict = {}
-    soup = BeautifulSoup(r.text, 'lxml')
-    try:
-        news = soup.find_all(name='span')
-        for new in news:
-            new_text = new.get_text()
-            if len(new_text) >=10:
-                # print(new_text)
-                if new_text.startswith('截至'):
-                    style1 = re.compile('.*?上海市已累计排除疑似病例(\d+)例.*?确诊病例(\d+)例')
-                    sh_paichu = re.search(style1, new_text).group(1)
-                    sh_quezhen = re.search(style1, new_text).group(2)
-                    sh_dict['累计排除疑似'] = sh_paichu
-                    sh_dict['累计确诊'] = sh_quezhen
-                elif new_text.startswith('目前'):
-                    style2 = re.compile('(\d+)例病情危重.*?(\d+)例重症.*?(\d+)例治愈.*?(\d+)例死亡.*?尚有(\d+)例疑似病例')
-                    sh_dict['累计重症'] = int(re.search(style2, new_text).group(1)) + int(re.search(style2, new_text).group(2))
-                    sh_dict['累计治愈'] = re.search(style2, new_text).group(3)
-                    sh_dict['累计死亡'] = re.search(style2, new_text).group(4)
-                    sh_dict['累计疑似'] = re.search(style2, new_text).group(5)
-    except:
-        print('上海数据未更新！')
-    finally:
-        # print(sh_dict)
-        return sh_dict
+class get_yq_info:
 
-def get_sh_today_news():
-    '''获得上海卫健委的新闻'''
-    url = r'http://wsjkw.sh.gov.cn/xwfb/index.html'
-    r = requests.get(url=url, headers=sh_headers)
-    soup = BeautifulSoup(r.text, 'lxml')
-    # print(soup)
-    today_format = datetime.datetime.today().strftime('%Y-%m-%d')
-    try:
-        today_sh_news = soup.find_all(name='span', text=today_format)
-        today_counts = len(today_sh_news)
-        for i in range(today_counts-1, -1, -1):
-            title = today_sh_news[i].find_previous_sibling(name='a').attrs['title']  # 标题
-            href = 'http://wsjkw.sh.gov.cn' + today_sh_news[i].find_previous_sibling(name='a').attrs['href'] #网址
-            if title.startswith('上海新增'):
-                # print(title)
-                return get_sh_data(href)
-    except:
-        print('上海数据未更新1')
-        return {}
+    def get_data_html(self):
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/14.0.835.163 Safari/535.1'}
+            response = requests.get('https://ncov.dxy.cn/ncovh5/view/pneumonia?from=timeline&isappinstalled=0', headers=headers, timeout=3)
+            # 请求页面
 
-def get_all_today_news():
-    '''获得国家卫健委的新闻'''
-    url = 'http://www.nhc.gov.cn/xcs/yqtb/list_gzbd.shtml'
-    r = requests.get(url, headers=quanguo_headers)
-    soup = BeautifulSoup(r.text, 'lxml')
-    try:
-        today_format = datetime.datetime.today().strftime('%Y-%m-%d')
-        # latest_news_title = soup.find(name='span', text=today_format).find_previous_sibling(name='a').attrs['title']
-        latest_news_href = 'http://www.nhc.gov.cn' + soup.find(name='span', text=today_format).find_previous_sibling(name='a').attrs['href']
-        # print(latest_news_href)
-        return get_all_today_data(latest_news_href)
-    except:
-        print('全国数据未更新1')
-        return ({}, {})
+            response = str(response.content, 'utf-8')
+            # 中文重新编码
+            return response
+            #返回了HTML数据
 
-def get_all_today_data(url):
-    '''获得国家卫健委的数据'''
-    r = requests.get(url, headers=quanguo_headers)
-    all_dict = {}
-    hubei_dict = {}
-    soup = BeautifulSoup(r.text, 'lxml')
-    try:
-        news = soup.find(name='p').get_text()
-        # print(news)
-        style1 = re.compile('新增确诊病例(\d+)例.*?（湖北省(\d+)例.*?重症病例(\d+)例.*?湖北省(\d+)例.*?死亡病例(\d+)例.*?湖北省(\d+)例.*?治愈出院病例(\d+)例.*?湖北省(\d+)例.*?疑似病例(\d+)例.*?湖北省(\d+)例')
-        style2 = re.compile('.*?累计报告确诊病例(\d+)例.*?现有重症病例(\d+)例.*?累计死亡病例(\d+)例.*?累计治愈出院病例(\d+)例.*?疑似病例(\d+)例')
-        style3 = re.compile('.*?累计追踪到密切接触者(\d+)人.*?解除医学观察(\d+)人.*?共有(\d+)人正在接受医学观察')
-        hubei_dict['新增确诊'] = re.search(style1, news).group(2)
-        hubei_dict['新增重症'] = re.search(style1, news).group(4)
-        hubei_dict['新增死亡'] = re.search(style1, news).group(6)
-        hubei_dict['新增治愈'] = re.search(style1, news).group(8)
-        hubei_dict['新增疑似'] = re.search(style1, news).group(10)
-        all_dict['新增疑似'] = re.search(style1, news).group(9)
-        all_dict['累计确诊'] = re.search(style2, news).group(1)
-        all_dict['累计重症'] = re.search(style2, news).group(2)
-        all_dict['累计死亡'] = re.search(style2, news).group(3)
-        all_dict['累计治愈'] = re.search(style2, news).group(4)
-        all_dict['累计疑似'] = re.search(style2, news).group(5)
-        all_dict['累计密切接触者'] = re.search(style3, news).group(1)
-        all_dict['累计医学观察者'] = re.search(style3, news).group(3)
-        # print(all_dict, hubei_dict)
-    except:
-        print('全国数据未更新！')
-    finally:
-        return all_dict, hubei_dict
+    def get_data_dictype(self):
+            areas_type_dic_raw = re.findall('try { window.getAreaStat = (.*?)}catch\(e\)',self.get_data_html())
+            areas_type_dic = json.loads(areas_type_dic_raw[0])
+            return areas_type_dic
+            #返回经过json转换过的字典化的数据
 
-def get_cookie(url):
-    driver = webdriver.Chrome()
-    driver.get(url)
-    time.sleep(3)
-    cookies = driver.get_cookies()
-    driver.quit()
-    items = []
-    for i in range(len(cookies)):
-        cookie_value = cookies[i]
-        item = cookie_value['name'] + '=' + cookie_value['value']
-        items.append(item)
-    cookiestr = '; '.join(a for a in items)
-    return cookiestr
+    def save_data_to_excle(self):
+            self.make_dir()
+            #调用方法检查数据目录是否存在，不存在则创建数据文件夹
+            count = 2
+            #数据写入行数记录
+            newworkbook = xlwt.Workbook()
+            worksheet = newworkbook.add_sheet('all_data')
+            # 打开工作簿，创建工作表
 
-sh_headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
-    'Cookie': get_cookie('http://wsjkw.sh.gov.cn/xwfb/index.html'),
-    # 'Cookie': 'zh_choose=s; zh_choose=s; _gscu_2010802395=80620430ie0po683; yd_cookie=12f170fc-e368-4a662db5220af2d434160e259b2e31585efb; _ydclearance=2cd0a8873fd311efcda1c1aa-05fc-4001-a108-0e86b80b3fee-1580700296; _gscbrs_2010802395=1; _pk_ref.30.0806=%5B%22%22%2C%22%22%2C1580693101%2C%22https%3A%2F%2Fwww.baidu.com%2Flink%3Furl%3DDVUbOETLyMZLC5c_V7RJRbAYPvyqaU3f2PCBi2-E6KC2QEFltdrKWGmhgA5NbC3c%26wd%3D%26eqid%3Df38b30250015e1c5000000045e365a8d%22%5D; _pk_ses.30.0806=*; _pk_id.30.0806=35b481da38abb562.1580620431.6.1580694952.1580693101.; _gscs_2010802395=80693100qds57e17|pv:6; AlteonP=ALa1BGHbHKyWUqcNUGRETw$$',
-    'Host': 'wsjkw.sh.gov.cn'
-}
+            worksheet.write(1, 2, '省份名称')
+            worksheet.write(1, 3, '省份简称或城市名称')
+            worksheet.write(1, 4, '确诊人数')
+            worksheet.write(1, 5, '疑似人数')
+            worksheet.write(1, 6, '治愈人数')
+            worksheet.write(1, 7, '死亡人数')
+            worksheet.write(1, 8, '地区ID编码')
+            #写入数据列标签
 
-quanguo_headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
-    'Cookie': 'oHAcoULcWCQb80S=pxzexGFCvyGV4xDkaMHSyjBmzwXn5O4vfCbxFCgMDfcBaKqsFU9FHstqjFY6wJt9; yfx_c_g_u_id_10006654=_ck20020209283417867964364567575; insert_cookie=67313298; security_session_verify=cdd046e368d8aca2f5503e2ccffd1d6f; yfx_f_l_v_t_10006654=f_t_1580606914774__r_t_1580694464711__v_t_1580695075457__r_c_2; oHAcoULcWCQb80T=4Keu.kLbpJzFTgYuS17WBAWziJn6so.QUEz6HHm0Fo8Gy_MmgQ3KoO.QYwdhMVG3RTKnfG84frm5f0CmsZgt5.CczGuklquP7LpEAcyl4Mfyln5xXmcOoaIbghHy10ediSfInBUc59SIxyekXKFlKdqXhFwvS47acnhsTNlVbspCopRBIcCHNc8HxRasIhLSBFs8UjiLwlcBdw.3MEDQ.m4O6jFo1M2xJfxrhFu1z1Pv_ZmynVDcLndwflWVg20Nn3.xdZ7_5ERSB3fpOKu6CXwAkGTaDnnG5jDQ01y5w5U1h8nv_WRm1TgQnnrbf3AOmHUEKesvqnbCx0WQB0HVocLg6kLJbGLtDrlKix0h97Vu.SG',
-    'Host': 'www.nhc.gov.cn'
-}
+            for province_data in self.get_data_dictype():
+                    provincename = province_data['provinceName']
+                    provinceshortName = province_data['provinceShortName']
+                    p_confirmedcount = province_data['confirmedCount']
+                    p_suspectedcount = province_data['suspectedCount']
+                    p_curedcount = province_data['curedCount']
+                    p_deadcount = province_data['deadCount']
+                    p_locationid = province_data['locationId']
+                    #用循环获取省级以及该省以下城市的数据
 
+                    worksheet.write(count, 2, provincename)
+                    worksheet.write(count, 3, provinceshortName)
+                    worksheet.write(count, 4, p_confirmedcount)
+                    worksheet.write(count, 5, p_suspectedcount)
+                    worksheet.write(count, 6, p_curedcount)
+                    worksheet.write(count, 7, p_deadcount)
+                    worksheet.write(count, 8, p_locationid)
+                    #在工作表里写入省级数据
 
-#一、全国和湖北的数据
-all_data, hubei_data = get_all_today_news()
-# print(all_data, hubei_data)
+                    count += 1
+                    #此处为写入行数累加，province部分循环
 
+                    for citiy_data in province_data['cities']:
+                            cityname = citiy_data['cityName']
+                            c_confirmedcount = citiy_data['confirmedCount']
+                            c_suspectedcount = citiy_data['suspectedCount']
+                            c_curedcount = citiy_data['curedCount']
+                            c_deadcount = citiy_data['deadCount']
+                            c_locationid = citiy_data['locationId']
+                            #该部分获取某个省下某城市的数据
+                            print(cityname)
+                            print(c_confirmedcount)
+                            worksheet.write(count, 3, cityname)
+                            worksheet.write(count, 4, c_confirmedcount)
+                            worksheet.write(count, 5, c_suspectedcount)
+                            worksheet.write(count, 6, c_curedcount)
+                            worksheet.write(count, 7, c_deadcount)
+                            worksheet.write(count, 8, c_locationid)
+                            #该部分在工作表里写入某城市的数据
 
-try:
-    all_commited = all_data['累计确诊']
-    all_intensive = all_data['累计重症']
-    all_death = all_data['累计死亡']
-    all_cure = all_data['累计治愈']
-    all_suspection = all_data['累计疑似']
-    all_new_suspection = all_data['新增疑似']
-    hubei_new_commited = hubei_data['新增确诊']
-    hubei_new_intensive = hubei_data['新增重症']
-    hubei_new_death = hubei_data['新增死亡']
-    hubei_new_cure = hubei_data['新增治愈']
-    hubei_new_suspection = hubei_data['新增疑似']
-except:
-    print('全国数据未更新2')
-#二、上海的数据
-sh_data = get_sh_today_news()
-try:
-    sh_commited = sh_data['累计确诊']
-    sh_intensive = sh_data['累计重症']
-    sh_death = sh_data['累计死亡']
-    sh_cure = sh_data['累计治愈']
-    sh_suspection = sh_data['累计疑似']
-    sh_exclude_suspection = sh_data['累计排除疑似']
-except:
-    print('上海数据未更新2')
+                            count += 1
+                            #此处为写入行数累加，cities部分循环
+            current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+            newworkbook.save('F:\人数采集3.0\实时采集v3.0-%s.xls' % (current_time))
+            print('======数据爬取成功======')
 
-print('全国数据：{}\n'
-      '湖北数据：{}\n'
-      '上海数据：{}'.format(all_data, hubei_data, sh_data))
+    def make_dir(self):
+            file_path = 'F:/人数采集3.0/'
+            if not os.path.exists(file_path):
+                    os.makedirs(file_path)
+                    print('======数据文件夹不存在=======')
+                    print('======数据文件夹创建成功======')
+                    print('======创建目录为%s======'%(file_path))
+            else:
+                    print('======数据保存在目录：%s======' % (file_path))
+            #检查并创建数据目录
+
+    def exe_task(self):
+            times = int(input('执行采集次数：'))
+            interval_time = round(float(input('每次执行间隔时间（分钟）')),1)
+            #round 方法保留一位小数
+            interval_time_min = interval_time * 60
+
+            for i in range(times):
+                    get_yq_info().save_data_to_excle()
+                    time.sleep(interval_time_min)
+
+    #执行完整采集任务
+
+get_yq_info().exe_task()
+
 
 ```
