@@ -105,19 +105,8 @@ class get_yq_info:
                     print('======数据保存在目录：%s======' % (file_path))
             #检查并创建数据目录
 
-    def exe_task(self):
-            times = int(input('执行采集次数：'))
-            interval_time = round(float(input('每次执行间隔时间（分钟）')),1)
-            #round 方法保留一位小数
-            interval_time_min = interval_time * 60
 
-            for i in range(times):
-                    get_yq_info().save_data_to_excle()
-                    time.sleep(interval_time_min)
-
-    #执行完整采集任务
-
-get_yq_info().exe_task()
+get_yq_info().save_data_to_excle()
 
 
 ```
