@@ -1,10 +1,10 @@
 # 2019-nCoV
 2019新型冠状病毒疫情信息的爬取与可视化- Crawling and Visualization about Daily Information of 2019 novel Coronavirus in China Mainland
 
-
+```python
 # -*- coding: utf-8 -*-
 """
-Created on Wed Feb  5 16:39:51 2020
+Created on Wed Feb  2 16:39:51 2020
 
 @author: GT72VR
 """
@@ -142,6 +142,8 @@ quanguo_headers = {
 #一、全国和湖北的数据
 all_data, hubei_data = get_all_today_news()
 # print(all_data, hubei_data)
+
+```
 try:
     all_commited = all_data['累计确诊']
     all_intensive = all_data['累计重症']
