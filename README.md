@@ -143,7 +143,7 @@ quanguo_headers = {
 all_data, hubei_data = get_all_today_news()
 # print(all_data, hubei_data)
 
-```
+
 try:
     all_commited = all_data['累计确诊']
     all_intensive = all_data['累计重症']
@@ -174,3 +174,4 @@ print('全国数据：{}\n'
       '湖北数据：{}\n'
       '上海数据：{}'.format(all_data, hubei_data, sh_data))
 
+```
