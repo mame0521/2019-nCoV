@@ -113,7 +113,7 @@ get_yq_info().save_data_to_excle()
 # A sample of output was shown as followings:
 
 ![](img/2019-nCoV_trend.png)
-
+![](img/2019-nCoV疫情地图.png)
 | 省份名称 Province Name | 省份或城市名称 Provice/City Name | 确诊人数 Confirmed Count | 疑似人数 Suspected Count | 治愈人数 Cured Count | 死亡人数 Dead Count | 地区ID编码 Location ID |
 |------------------------|----------------------------------|--------------------------|--------------------------|----------------------|---------------------|------------------------|
 | 湖北省                 | 湖北                             | 16678                    | 0                        | 537                  | 479                 | 420000                 |
