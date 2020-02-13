@@ -178,7 +178,7 @@ fig.savefig('2019-nCoV疫情地图.png')
 
 ![](img/2019-nCoV_trend.png)
 ![](img/2019-nCoV_map1.png)
-![](img/2019-nCoV疫情地图.png)
+![](img/2019-nCoV-map2.png)
 
 | 省份名称 Province Name | 省份或城市名称 Provice/City Name | 确诊人数 Confirmed Count | 疑似人数 Suspected Count | 治愈人数 Cured Count | 死亡人数 Dead Count | 地区ID编码 Location ID |
 |------------------------|----------------------------------|--------------------------|--------------------------|----------------------|---------------------|------------------------|
