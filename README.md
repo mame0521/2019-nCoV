@@ -1,5 +1,6 @@
 # 2019-nCoV
 2019新型冠状病毒疫情信息的爬取与可视化- Crawling and Visualization about Daily Information of 2019 novel Coronavirus Epidemic in China Mainland
+数据采集网站是丁香园, The data source is Ding Xiang Yuan, https://ncov.dxy.cn/ncovh5/view/pneumonia
 
 ```python
 # -*- coding: utf-8 -*-
@@ -108,6 +109,69 @@ class get_yq_info:
 
 get_yq_info().save_data_to_excle()
 
+
+fig = matplotlib.figure.Figure()
+fig.set_size_inches(width/100, height/100) # 设置绘图板尺寸
+axes = fig.add_axes(rect)
+    
+# 兰博托投影模式，局部
+m = Basemap(projection='lcc', llcrnrlon=77, llcrnrlat=14, urcrnrlon=140, urcrnrlat=51, lat_1=33, lat_2=45, lon_0=100, ax=axes)
+    
+# 兰博托投影模式，全图
+#m = Basemap(projection='lcc', llcrnrlon=80, llcrnrlat=0, urcrnrlon=140, urcrnrlat=51, lat_1=33, lat_2=45, lon_0=100, ax=axes)
+    
+# 圆柱投影模式，局部
+#m = Basemap(llcrnrlon=lon_min, urcrnrlon=lon_max, llcrnrlat=lat_min, urcrnrlat=lat_max, resolution='l', ax=axes)
+    
+# 正射投影模式
+#m = Basemap(projection='ortho', lat_0=36, lon_0=102, resolution='l', ax=axes)
+	
+# 全球等经纬投影模式，
+#m = Basemap(llcrnrlon=lon_min, urcrnrlon=lon_max, llcrnrlat=lat_min, urcrnrlat=lat_max, resolution='l', ax=axes)
+#m.etopo()
+    
+m.readshapefile('res/china-shapefiles-master/china', 'province', drawbounds=True)
+m.readshapefile('res/china-shapefiles-master/china_nine_dotted_line', 'section', drawbounds=True)
+m.drawcoastlines(color='black') # 洲际线
+m.drawcountries(color='black')  # 国界线
+m.drawparallels(np.arange(lat_min,lat_max,10), labels=[1,0,0,0]) #画经度线
+m.drawmeridians(np.arange(lon_min,lon_max,10), labels=[0,0,0,1]) #画纬度线
+    
+pset = set()
+for info, shape in zip(m.province_info, m.province):
+    pname = info['OWNER'].strip('\x00')
+    fcname = info['FCNAME'].strip('\x00')
+    if pname != fcname: # 不绘制海岛
+      continue
+        
+        for key in data.keys():
+            if key in pname:
+                if data[key] == 0:
+                    color = '#f0f0f0'
+                elif data[key] < 10:
+                    color = '#ffaa85'
+                elif data[key] <100:
+                    color = '#ff7b69'
+                elif  data[key] < 1000:
+                    color = '#bf2121'
+                else:
+                    color = '#7f1818'
+                break
+        
+        poly = Polygon(shape, facecolor=color, edgecolor=color)
+        axes.add_patch(poly)
+        
+        pos = provincePos[pname]
+        text = pname.replace("自治区", "").replace("特别行政区", "").replace("壮族", "").replace("维吾尔", "").replace("回族", "").replace("省", "").replace("市", "")
+        if text not in pset:
+            x,  y = m(pos[0], pos[1])
+            axes.text(x,  y, text, fontproperties=font_11, color='#00FFFF')
+            pset.add(text)
+    
+axes.legend(handles, labels, bbox_to_anchor=(0.5, -0.11), loc='lower center', ncol=4, prop=font_14)
+axes.set_title("2019-nCoV Epidemic Map 疫情地图", fontproperties=font_14)
+FigureCanvasAgg(fig)
+fig.savefig('2019-nCoV疫情地图.png')
 
 ```
 # A sample of output was shown as followings:
