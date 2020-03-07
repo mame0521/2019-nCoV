@@ -175,7 +175,7 @@ fig.savefig('2019-nCoV疫情地图.png')
 
 ```
 # A sample of output was shown as followings:
-2020, Feb 28
+2020, Mar 08
 
 ![](img/2019-nCoV_trend.png)
 ![](img/2019-nCoV_map1.png)
